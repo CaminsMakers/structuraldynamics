@@ -1,0 +1,61 @@
+
+/*
+ 
+  CaminsMakers
+  
+  www.facebook.com/caminsmakers
+  twitter  @caminsmakers
+  http://caminsmakers.upc.edu
+  Joan Morató, Javi Menéndez
+  Openly available in  GitHub
+  This piece of code belongs to a vaster set of experiments developed in the School of Civil Engineering of Barcelona
+  The code as well as related information may be used under CC licence BY NC ND
+ 
+ 
+ ARDUINO WIRELESS MIRROR
+ This program is uploaded to an Arduino UNO with an Xbee Shield attached
+ 
+ This program gathers data received from another Arduino through Software Serial 
+ connection and mirrors it to Xbee wireless Serial.
+ 
+ */
+
+#include <SoftwareSerial.h>
+
+const int SerialPin1=2; // Input Pin used for the Software Serial communication
+const int Serial Pin2=3; // Input Pin used for the Software Serial communication
+
+SoftwareSerial mySerial(SerialPin1, SerialPin2);
+
+
+void setup() {
+  // initialize serial communications at 9600 bps:
+  Serial.begin(9600); //Xbee data is sent through a regular Serial protocol
+  mySerial.begin(9600);
+
+}
+
+void loop() {
+  
+  int i = 0;
+  char someChar[32] = {0};
+  char charSent;
+  
+  /* as characters arrive over the serial port...
+  Data is stored in a variable until the end is reached*/
+  
+  if(mySerial.available()){
+    do{
+     charSent= mySerial.read(); 
+      someChar[i] = charSent;
+      delay(1); 
+   i++;
+    } while (mySerial.available() > 0);
+    
+    //Data is sent through XBee
+    Serial.print(someChar);
+   mySerial.flush();
+  } 
+
+delay(1);
+}
