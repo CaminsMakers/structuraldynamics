@@ -1,0 +1,231 @@
+
+/*
+ 
+ CaminsMakers
+ 
+ www.facebook.com/caminsmakers
+ twitter  @caminsmakers
+ http://caminsmakers.upc.edu
+ Joan Morató, Javi Menéndez
+ Openly available in  GitHub
+ This piece of code belongs to a vaster set of experiments developed in the School of Civil Engineering of Barcelona
+ The code as well as related information may be used under CC licence BY NC ND
+ 
+ 
+ARDUINO MOTOR CONTROL WITH SWITCHES AND APP
+This Arduino program is uploaded to an Arduino UNO with a motor Shield and a Bluetooth Shield attached to it. it controls 
+a motor with a set of switches connected to the Arduino and also through a mobile Android App that sends data using Bluetooth 
+
+*/
+
+#include <SoftwareSerial.h>
+
+// Input and Output pins of the Bluetooth Serial
+#define rxPin 2
+#define txPin 1
+
+//A Bluetooth Software Serial is created for communication with
+//the Bluetooth Shield
+SoftwareSerial BTSerial(rxPin, txPin);
+
+
+const int
+// Pins of direction, power, brake from the Motor Shield
+PWM_A   = 3,
+DIR_A   = 12,
+BRAKE_A = 9,
+SNS_A   = A0,
+
+/*Digital Pins for the switches. ON/OFF, change direction
+increase and decrease speed*/
+upSpeedPin = 5,
+downSpeedPin =4;
+directionSwitchPin=6;
+onOffSwitchStateSwitchPin=7;
+
+//change of speed when the switches are used 
+speedMod=60;
+
+//Boolean variables
+int onOffSwitchState=0;
+int previousOnOffSwitchState=0;
+int directionSwitchState=0;
+int previousDirectionSwitchState=0;
+int upSpeedSwitchState=0;
+int downSpeedSwitchState=0;
+int previousUpSpeedSwitchState=0;
+int previousDownSpeedSwitchState=0;
+int i;
+int motorEnabled=0;
+int motorDirection=1;
+
+//Motor Speed: range 0-255
+int motorSpeed=130;
+
+//Serials and Pins are initialized
+void setup(){
+  Serial.begin(9600);
+  pinMode(directionSwitchPin, INPUT);
+  pinMode(onOffSwitchStateSwitchPin, INPUT);
+
+  pinMode(BRAKE_A, OUTPUT);  // Brake pin on channel A
+  pinMode(DIR_A, OUTPUT);    // Direction pin on channel A
+
+  // define pin modes for tx, rx pins:
+  pinMode(rxPin, INPUT);
+  pinMode(txPin, OUTPUT);
+  BTSerial.begin(38400);
+
+}
+
+void loop(){
+
+/*PART 1: BLUETOOTH
+Data is read and checked from the Bluetooth Serial */
+
+  int i=0;
+  int b=0;
+  char someChar[32] = {0}; //array that stores the data gathered from
+                           //BTSerial
+  char speedChar[32] = {0}; //array that stores the speed number
+  char charSent;
+  boolean checkSpeed=false; //flag that determines if a speed change
+                             //is recieved 
+  boolean checkSerial=false; //flag that checks if there is data
+                             //available from BTSerial.
+  
+  /*Data is recieved from BTSerial. A character defines the action
+  that will be done. If the speed is changed (S), a number is received
+  right after this with the new speed value.*/
+  if(BTSerial.available()){
+    do{
+      checkSerial=true;
+      charSent= BTSerial.read();
+      
+      //If there is a speed change, the new values are read and stored
+      if(checkSpeed==true){
+        if (charSent=='S' ) break;
+        speedChar[b]=charSent;
+        b++;
+      }
+      someChar[i] = charSent;
+
+      delay(3);  
+      
+      /*The character recieved is checked and action is performed
+      accordingly*/
+      if(someChar[i]=='O'){
+        motorEnabled=1; 
+        Serial.println("Switch ON");
+        break;
+      }
+
+      if(someChar[i]=='A'){
+        motorEnabled=0; 
+        Serial.println("Switch OFF");
+        break;
+      }
+
+      if(someChar[i]=='D'){
+        motorDirection=!motorDirection;
+        Serial.println("Switch direction");
+        break;
+      }
+
+      if(someChar[i]=='S'){
+        checkSpeed=true;
+        Serial.println("Speed changed: ");   
+      } 
+      i++;
+    } 
+    while (BTSerial.available() > 0);
+
+    if (checkSpeed==true){
+      motorSpeed=atof(speedChar);
+      Serial.println(speedChar);
+
+    }
+
+    if(sizeof(someChar)>0){
+      Serial.println("String recieved: ");
+      Serial.println(someChar);
+    }
+  }
+
+  BTSerial.flush();
+
+  
+/*PART 2: SWITCHES
+Switch changes are checked and the proper actions are performed*/
+  
+  onOffSwitchState= digitalRead(onOffSwitchStateSwitchPin);
+  delay(1);
+  directionSwitchState= digitalRead(directionSwitchPin);
+  delay(1);
+  upSpeedSwitchState= digitalRead(upSpeedPin);
+  delay(1);
+  downSpeedSwitchState= digitalRead(downSpeedPin);
+  
+  //When a switch is clicked and its state changes, actions are performed
+  if(upSpeedSwitchState!=previousUpSpeedSwitchState){
+    if(upSpeedSwitchState== HIGH){
+      motorSpeed=motorSpeed+speedMod;
+      Serial.println("Velocitat pujada: ");
+      Serial.println(motorSpeed);
+    }
+  }
+
+  if(downSpeedSwitchState!=previousDownSpeedSwitchState){
+    if(downSpeedSwitchState== HIGH){
+      motorSpeed=motorSpeed-speedMod;
+      Serial.println("Velocitat baixada: ");
+      Serial.println(motorSpeed);
+    }
+  }
+
+  if(onOffSwitchState!=previousOnOffSwitchState){
+    if(onOffSwitchState== HIGH){
+      motorEnabled= !motorEnabled;
+      Serial.println("Switch ON OFF canviat");
+    }
+  }
+
+  if (directionSwitchState != previousDirectionSwitchState){
+    if (directionSwitchState== HIGH){
+      motorDirection= !motorDirection;
+      Serial.println("Switch de direccio canviat");
+    }
+  }
+  
+/*PART 3: SEND DATA TO MOTOR
+Data is sent to motor according to the current state of the 
+variables:ON/OFF, direction, speed.*/
+  
+  if (motorDirection==1){
+    digitalWrite(DIR_A, HIGH);
+  }
+
+  else{
+    digitalWrite(DIR_A, LOW);
+  }
+
+  if (motorEnabled == 1){
+    digitalWrite(BRAKE_A, LOW);
+    if (motorSpeed<0) motorSpeed=0;
+    if (motorSpeed>255) motorSpeed=255;
+    analogWrite(PWM_A, motorSpeed);
+
+  }
+
+  else {
+    digitalWrite(BRAKE_A, HIGH);
+    analogWrite(PWM_A, 0);
+  }
+  
+  previousDirectionSwitchState= directionSwitchState;
+  previousOnOffSwitchState= onOffSwitchState;
+  previousUpSpeedSwitchState=upSpeedSwitchState;
+  previousDownSpeedSwitchState=downSpeedSwitchState;  
+
+}
+
