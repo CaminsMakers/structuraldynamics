@@ -1,0 +1,67 @@
+/*
+ 
+ CaminsMakers
+ 
+ www.facebook.com/caminsmakers
+ twitter  @caminsmakers
+ http://caminsmakers.upc.edu
+ Joan Morató, Javi Menéndez
+ Openly available in  GitHub
+ This piece of code belongs to a vaster set of experiments developed in the School of Civil Engineering of Barcelona
+ The code as well as related information may be used under CC licence BY NC ND
+ 
+ 
+Processing
+This code requires a TinkerKit board together with an ARDUINO UNO in which a StandardFirmata example is uploades. Additionally, 
+a 2/3 axis accelerometer is attached in I0 I1 pins
+
+A tinkerkit library is needed and must be copied in the root processing libraries folder
+
+*/
+
+
+import processing.serial.*;
+import cc.arduino.*;
+import com.tinkerkit.*;
+int size1=1000;
+int size2=1000;
+float i=0;
+PVector v1, v2;
+
+TKAccelerometer accelerometer; 
+Arduino arduino;
+
+void setup() {
+  size(size1, size2);        
+  println(Arduino.list());
+  arduino = new Arduino(this, Arduino.list()[1], 57600);
+  accelerometer = new TKAccelerometer(arduino, TK.I0, TK.I1);
+  background(87, 36, 124);
+  frameRate(60);
+
+ 
+  
+}
+
+void draw() {
+   if (i < size1) {  
+     v1 = new PVector(i, accelerometer.readY()-100);
+     delay(45);
+     i=i+1;
+//     background(accelerometer.readX()/5, 36, 124);
+   }else {
+    i=0;
+    background(87, 36, 124);
+    v1 = new PVector(i, accelerometer.readY()/2-100);
+    v2 = new PVector(i, accelerometer.readY()/2-100);
+   }  
+   v2 = new PVector(i, accelerometer.readY()-100);
+   stroke(255,i);
+   line(v1.x,v1.y,v2.x,v2.y);
+   println(accelerometer.readY());
+   if (accelerometer.readY() > 600) {  
+      background(255, 36, 124);
+   }
+
+  
+}
