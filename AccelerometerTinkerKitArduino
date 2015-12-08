@@ -1,0 +1,94 @@
+
+/*
+ 
+  CaminsMakers
+ 
+ www.facebook.com/caminsmakers
+ twitter  @caminsmakers
+ http://caminsmakers.upc.edu
+ Joan Morató, Javi Menéndez
+ Openly available in  GitHub
+ This piece of code belongs to a vaster set of experiments developed in the School of Civil Engineering of Barcelona
+ The code as well as related information may be used under CC licence BY NC ND
+ 
+ 
+ ARDUINO TINKERKIT ACCELEROMETER RECEIVER
+ This program is uploaded to an Arduino UNO with a tinkerkit shield and a Tinkerkit accelerometer
+ attached to it.
+ 
+ Reads from two analog input pins, a T000020 Accelerometer Module connected to I0 and I1, a 
+ two axis accelerometer and prints the results to a Software Serial that is used to communicate 
+ This Arduino with another one, that sends the data wirelessly
+ 
+ */
+
+#define O0 11
+#define O1 10
+#define O2 9
+#define O3 6
+#define O4 5
+#define O5 3
+#define I0 A0
+#define I1 A1
+#define I2 A2
+#define I3 A3
+#define I4 A4
+#define I5 A5
+#include <SoftwareSerial.h>
+
+// Constants. Useful for giving names to the pins used:
+
+const int analogInPin1 = I0;  // Analog input pin that the Accelerometer's first pin is attached to
+const int analogInPin2 = I1;  // Analog input pin that the Accelerometer's second pin is attached to
+const int SerialPin1 = 2; // Input Pin used for the Software Serial communication
+const int SerialPin2 = 3; // Output Pin used for the Software Serial communication
+
+int sensorValue1 = 0;        // value read from the Accelerometer's first pin
+int sensorValue2 = 0;        // value read from the Accelerometer's second pin
+
+SoftwareSerial mySerial(SerialPin1,SerialPin2);
+
+
+void setup() {
+  // initialize serial communications at 9600 bps:
+  mySerial.begin(9600);
+  Serial.begin(9600);
+}
+
+void loop() {
+  
+  // read the both analog in values:
+  sensorValue1 = analogRead(analogInPin1);  
+  sensorValue2 = analogRead(analogInPin2);  
+  
+  /* 
+  Data is sent through Software Serial in this form:
+      X300
+      Y400
+      X250
+      Y500
+      ...
+  */
+  
+  mySerial.print("X");
+  mySerial.print(sensorValue1);
+  mySerial.print("\n");
+  
+  mySerial.print("Y");
+  mySerial.print(sensorValue2);
+  mySerial.print("\n");
+
+  Serial.print("X");
+  Serial.print(sensorValue1);
+  Serial.print("\n");
+  
+  Serial.print("Y");
+  Serial.print(sensorValue2);
+  Serial.print("\n");
+
+
+  // wait X milliseconds before the next loop
+  // for the analog-to-digital converter to settle
+  // after the last reading:
+  delay(10);                    
+}
